@@ -2,10 +2,17 @@ import { Drawer, Spin, Steps } from 'antd';
 import PropTypes from 'prop-types';
 import { Suspense } from 'react';
 
-const CustomDrawer = ({ open, onClose, currentOrder, items }) => {
+const CustomDrawer = ({
+  open,
+  onClose,
+  currentOrder,
+  items,
+  currentOrderTimeElapsed
+}) => {
   return (
     <Suspense fallback={<Spin />}>
       <Drawer title={currentOrder.id} open={open} onClose={onClose}>
+        <h4>Total Time Taken: {currentOrderTimeElapsed} seconds</h4>
         <Steps
           direction="vertical"
           current={currentOrder.current}
@@ -27,7 +34,8 @@ CustomDrawer.propTypes = {
   items: PropTypes.arrayOf({
     title: PropTypes.string,
     description: PropTypes.string
-  })
+  }),
+  currentOrderTimeElapsed: PropTypes.number
 };
 
 export default CustomDrawer;

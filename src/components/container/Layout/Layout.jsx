@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { Layout, Menu } from 'antd';
+import { Layout as AntLayout, Menu } from 'antd';
 import { useNavigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CalendarOutlined, PieChartOutlined } from '@ant-design/icons';
 import styles from './styles.module.css';
@@ -7,7 +7,7 @@ import PizzaMenu from '../PizzaMenu/PizzaMenu';
 import { useEffect, useState } from 'react';
 import OrderTracker from '../OrderTracker/OrderTracker';
 
-const { Header, Content } = Layout;
+const { Header, Content } = AntLayout;
 
 function getItem(label, key, icon, children) {
   return {
@@ -27,22 +27,30 @@ const items = [
   getItem('Menu', '1', <PieChartOutlined />),
   getItem('Orders', '2', <CalendarOutlined />)
 ];
-const AppLayout = () => {
+const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [ongoingOrders, setOnGoingOrders] = useState([]);
   const [allPizza, setAllPizza] = useState([]);
   const [isAllPizzaLoading, setIsAllPizzaLoading] = useState(false);
   const [orders, setOrders] = useState([]);
   const [currentRoute, setCurrentRoute] = useState('1');
 
   useEffect(() => {
-    if (currentRoute === '1') {
+    if (location.pathname === '/') {
       (async function () {
         setIsAllPizzaLoading(true);
         const res = await fetch('http://localhost:8080/all');
         const data = await res.json();
         setAllPizza(data);
         setIsAllPizzaLoading(false);
+      })();
+    } else {
+      (async function () {
+        setIsAllPizzaLoading(true);
+        const res = await fetch('http://localhost:8080/orders');
+        const data = await res.json();
+        setOrders(data.map((val) => ({ ...val, status: 'COMPLETED' })));
       })();
     }
   }, [currentRoute]);
@@ -58,7 +66,7 @@ const AppLayout = () => {
   }, []);
 
   return (
-    <Layout
+    <AntLayout
       style={{
         minHeight: '100vh',
         minWidth: '100vw'
@@ -77,7 +85,7 @@ const AppLayout = () => {
           onClick={onMenuChange}
         />
       </Header>
-      <Layout>
+      <AntLayout>
         <Content
           style={{
             margin: '16px 16px'
@@ -93,12 +101,19 @@ const AppLayout = () => {
             />
             <Route
               path="/orders"
-              element={<OrderTracker orders={orders} setOrders={setOrders} />}
+              element={
+                <OrderTracker
+                  orders={orders}
+                  setOrders={setOrders}
+                  ongoingOrders={ongoingOrders}
+                  setOnGoingOrders={setOnGoingOrders}
+                />
+              }
             />
           </Routes>
         </Content>
-      </Layout>
-    </Layout>
+      </AntLayout>
+    </AntLayout>
   );
 };
-export default AppLayout;
+export default Layout;
