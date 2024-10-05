@@ -1,10 +1,11 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Layout, Menu } from 'antd';
-import { useNavigate, Route, Routes } from 'react-router-dom';
+import { useNavigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CalendarOutlined, PieChartOutlined } from '@ant-design/icons';
 import styles from './styles.module.css';
 import PizzaMenu from '../PizzaMenu/PizzaMenu';
 import { useEffect, useState } from 'react';
+import OrderTracker from '../OrderTracker/OrderTracker';
 
 const { Header, Content } = Layout;
 
@@ -27,9 +28,11 @@ const items = [
   getItem('Orders', '2', <CalendarOutlined />)
 ];
 const AppLayout = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const [allPizza, setAllPizza] = useState([]);
   const [isAllPizzaLoading, setIsAllPizzaLoading] = useState(false);
+  const [orders, setOrders] = useState([]);
   const [currentRoute, setCurrentRoute] = useState('1');
 
   useEffect(() => {
@@ -44,12 +47,16 @@ const AppLayout = () => {
     }
   }, [currentRoute]);
 
+  const defaultAttribute = useMemo(() => {
+    return [location.pathname === '/orders' ? '2' : '1'];
+  }, []);
+
   const onMenuChange = useCallback((e) => {
     const nav = routes[e.key];
     setCurrentRoute(nav);
     navigate(nav);
   }, []);
-  
+
   return (
     <Layout
       style={{
@@ -61,7 +68,7 @@ const AppLayout = () => {
         <Menu
           theme="dark"
           mode="horizontal"
-          defaultSelectedKeys={['1']}
+          defaultSelectedKeys={defaultAttribute}
           items={items}
           style={{
             flex: 1,
@@ -83,6 +90,10 @@ const AppLayout = () => {
               element={
                 <PizzaMenu data={allPizza} isLoading={isAllPizzaLoading} />
               }
+            />
+            <Route
+              path="/orders"
+              element={<OrderTracker orders={orders} setOrders={setOrders} />}
             />
           </Routes>
         </Content>

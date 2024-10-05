@@ -1,5 +1,5 @@
-import { useState, memo, useCallback, lazy } from 'react';
-import { Card, Form, Flex, Skeleton, message } from 'antd';
+import { useState, memo, useCallback, lazy, Suspense } from 'react';
+import { Card, Form, Flex, Skeleton, message, Spin } from 'antd';
 import PropTypes from 'prop-types';
 import styles from './styles.module.css';
 
@@ -93,78 +93,80 @@ const PizzaMenu = (props) => {
     }
   }, []);
   return (
-    <Flex wrap gap="small" justify="center" onClick={onPizzaClick}>
-      {isLoading ? (
-        [1, 2, 3, 4, 5].map((val, idx) => (
-          <Card
-            key={idx}
-            className={styles['card']}
-            cover={
-              <Skeleton.Image active className={styles['loading-image']} />
-            }
-          >
-            <Skeleton active paragraph={{ rows: 1 }} />
-          </Card>
-        ))
-      ) : (
-        <>
-          <Card
-            key="diy-pizza"
-            data-card-id="diy-pizza"
-            hoverable
-            className={styles['card']}
-            cover={
-              <img
-                alt="example"
-                src="https://pizzamiamiami.com/wp-content/uploads/2020/04/checkout-create-your-pizza.png"
-              />
-            }
-          >
-            <Meta
-              title={'Create your own pizza'}
-              description={
-                'Curate your pizza with custom base, toppings and flavour.'
-              }
-            />
-          </Card>
-          {data.map((currentData) => (
+    <Suspense fallback={<Spin />}>
+      <Flex wrap gap="small" justify="center" onClick={onPizzaClick}>
+        {isLoading ? (
+          [1, 2, 3, 4, 5].map((val, idx) => (
             <Card
-              key={currentData.id}
-              data-card-details={JSON.stringify(currentData)}
+              key={idx}
+              className={styles['card']}
+              cover={
+                <Skeleton.Image active className={styles['loading-image']} />
+              }
+            >
+              <Skeleton active paragraph={{ rows: 1 }} />
+            </Card>
+          ))
+        ) : (
+          <>
+            <Card
+              key="diy-pizza"
+              data-card-id="diy-pizza"
               hoverable
               className={styles['card']}
-              data-card-id={currentData.id}
               cover={
                 <img
-                  className={styles['pizza-preview']}
                   alt="example"
-                  src={currentData.image_url}
+                  src="https://pizzamiamiami.com/wp-content/uploads/2020/04/checkout-create-your-pizza.png"
                 />
               }
             >
               <Meta
-                title={currentData.pizza_name}
-                description={currentData.description}
+                title={'Create your own pizza'}
+                description={
+                  'Curate your pizza with custom base, toppings and flavour.'
+                }
               />
             </Card>
-          ))}
-          <CreatePizzaModal
-            isOpen={isModalOpen}
-            isLoading={isCreatingPizzaOrder}
-            handleCancel={onCancelPizza}
-            pizzaDetails={currentPizza}
-            handleOk={onCreatePizzaOrder}
-          />
-          <CreatePizzaDrawer
-            open={isCreatingCustomPizza}
-            onClose={onCreateCustomPizzaClose}
-            form={createPizzaForm}
-            onSubmit={onCustomPizzCreate}
-          />
-          {contextHolder}
-        </>
-      )}
-    </Flex>
+            {data.map((currentData) => (
+              <Card
+                key={currentData.id}
+                data-card-details={JSON.stringify(currentData)}
+                hoverable
+                className={styles['card']}
+                data-card-id={currentData.id}
+                cover={
+                  <img
+                    className={styles['pizza-preview']}
+                    alt="example"
+                    src={currentData.image_url}
+                  />
+                }
+              >
+                <Meta
+                  title={currentData.pizza_name}
+                  description={currentData.description}
+                />
+              </Card>
+            ))}
+            <CreatePizzaModal
+              isOpen={isModalOpen}
+              isLoading={isCreatingPizzaOrder}
+              handleCancel={onCancelPizza}
+              pizzaDetails={currentPizza}
+              handleOk={onCreatePizzaOrder}
+            />
+            <CreatePizzaDrawer
+              open={isCreatingCustomPizza}
+              onClose={onCreateCustomPizzaClose}
+              form={createPizzaForm}
+              onSubmit={onCustomPizzCreate}
+            />
+            {contextHolder}
+          </>
+        )}
+      </Flex>
+    </Suspense>
   );
 };
 
