@@ -4,7 +4,8 @@ import {
   useState,
   useTransition,
   Suspense,
-  useMemo
+  useMemo,
+  useCallback
 } from 'react';
 import { List, Steps, Spin } from 'antd';
 import PropTypes from 'prop-types';
@@ -25,14 +26,17 @@ const OrderTracker = ({
   const [currentOrder, setCurrentOrder] = useState({});
   const [isPending, startTransition] = useTransition();
 
-  const sanatiseData = (data) => ({
-    current: status[data.status],
-    title: data.id,
-    abstractCurrent: abstractStatus[data.status],
-    id: data.id,
-    [data.id]: data.status,
-    timeline: data.timeline
-  });
+  const sanatiseData = useCallback(
+    (data) => ({
+      current: status[data.status],
+      title: data.id,
+      abstractCurrent: abstractStatus[data.status],
+      id: data.id,
+      [data.id]: data.status,
+      timeline: data.timeline
+    }),
+    []
+  );
 
   const sanatisedCurrentData = useMemo(() => {
     return orders.map(sanatiseData);
