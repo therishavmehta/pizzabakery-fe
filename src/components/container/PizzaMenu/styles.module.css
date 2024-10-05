@@ -1,0 +1,16 @@
+.card {
+    max-width: 250px;
+    max-height: 500px;
+}
+
+.pizza-preview {
+    max-width: 250px;
+    height: 250px;
+    object-fit: cover;
+    background-color: white;
+}
+
+.loading-image {
+    width: 250px !important;
+    height: 250px !important
+}
