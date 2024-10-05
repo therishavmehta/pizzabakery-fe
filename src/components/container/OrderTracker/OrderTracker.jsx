@@ -75,10 +75,12 @@ const OrderTracker = ({
       if (data.status === 'COMPLETED') {
         startTransition(() => {
           setOrders((orders) => [data, ...orders]);
-          const currentOnGoingOrders = [...ongoingOrders].filter(
-            (order) => order.id !== data.id
-          );
-          setOnGoingOrders([...currentOnGoingOrders]);
+          setOnGoingOrders((prevOngoingOrder) => {
+            const currentOnGoingOrders = [...prevOngoingOrder].filter(
+              (order) => order.id !== data.id
+            );
+            return [...currentOnGoingOrders];
+          });
         });
       } else {
         startTransition(() =>
