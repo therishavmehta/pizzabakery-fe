@@ -1,7 +1,7 @@
 import { ConfigProvider } from 'antd';
 import { BrowserRouter as Router } from 'react-router-dom';
 import './App.css';
-import { AppLayout } from './components/container/Layout';
+import { Layout } from './components/container/Layout';
 
 function App() {
   return (
@@ -16,7 +16,7 @@ function App() {
           hashed: false
         }}
       >
-        <AppLayout />
+        <Layout />
       </ConfigProvider>
     </Router>
   );
