@@ -10,7 +10,7 @@ import {
 import { List, Steps, Spin } from 'antd';
 import PropTypes from 'prop-types';
 import { socket } from '../../../../socket';
-import { status, abstractStatus, abstractItem, items } from './static';
+import { status, abstractStatus, abstractItem, items } from '../../../static';
 
 const StatusDrawer = lazy(() =>
   import('../../presentation/StatusDrawer/StatusDrawer')
@@ -45,8 +45,8 @@ const OrderTracker = ({
   const currentOrderTimeElapsed = useMemo(() => {
     if (
       Object.hasOwn(currentOrder, 'timeline') &&
-      currentOrder.timeline.COMPLETED.length &&
-      currentOrder.timeline.COMPLETED.length
+      currentOrder.timeline?.COMPLETED?.length &&
+      currentOrder.timeline?.COMPLETED?.length
     ) {
       const start = new Date(currentOrder.timeline.PENDING);
       const end = new Date(currentOrder.timeline.COMPLETED);
@@ -173,6 +173,7 @@ const OrderTracker = ({
           onClose={() => setShowDrawer(false)}
           currentOrder={currentOrder}
           currentOrderTimeElapsed={currentOrderTimeElapsed}
+          isCompleted={currentOrder?.timeline?.COMPLETED?.length > 0}
         />
       </div>
     </Suspense>

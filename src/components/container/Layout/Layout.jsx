@@ -96,7 +96,7 @@ const Layout = () => {
               exact
               path="/"
               element={
-                <PizzaMenu data={allPizza} isLoading={isAllPizzaLoading} />
+                <PizzaMenu data={allPizza} isLoading={isAllPizzaLoading} setOnGoingOrders={setOnGoingOrders} />
               }
             />
             <Route

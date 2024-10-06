@@ -2,7 +2,7 @@ import { useState, memo, useCallback, lazy, Suspense } from 'react';
 import { Card, Form, Flex, Skeleton, message, Spin } from 'antd';
 import PropTypes from 'prop-types';
 import styles from './styles.module.css';
-
+import { abstractStatus, status } from '../../../static';
 const CreatePizzaDrawer = lazy(() =>
   import('../../presentation/CreatePizzaDrawer/CreatePizzaDrawer')
 );
@@ -12,7 +12,7 @@ const CreatePizzaModal = lazy(() =>
 const { Meta } = Card;
 
 const PizzaMenu = (props) => {
-  const { data, isLoading } = props;
+  const { data, isLoading, setOnGoingOrders } = props;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreatingPizzaOrder, setIsCreatingPizzaOrder] = useState(false);
   const [isCreatingCustomPizza, setIsCreatingCustomPizza] = useState(false);
@@ -49,6 +49,17 @@ const PizzaMenu = (props) => {
         body: JSON.stringify({ toppings })
       });
       const response = await raw.json();
+      setOnGoingOrders((prev) => [
+        {
+          current: status[response.data.status],
+          title: response.data.id,
+          abstractCurrent: abstractStatus[response.data.status],
+          id: response.data.id,
+          [response.data.id]: response.data.status,
+          timeline: response.data.timeline
+        },
+        ...prev
+      ]);
       messageApi.open({
         type: 'success',
         content: `Order ${response.data.id} is in progress.`
@@ -180,7 +191,8 @@ PizzaMenu.propTypes = {
     })
   ).isRequired,
   onCreatePizza: PropTypes.func,
-  isLoading: PropTypes.bool
+  isLoading: PropTypes.bool,
+  setOnGoingOrders: PropTypes.func
 };
 
 export default memo(PizzaMenu);

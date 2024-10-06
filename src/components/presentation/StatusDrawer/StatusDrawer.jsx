@@ -7,12 +7,15 @@ const CustomDrawer = ({
   onClose,
   currentOrder,
   items,
-  currentOrderTimeElapsed
+  currentOrderTimeElapsed,
+  isCompleted
 }) => {
   return (
     <Suspense fallback={<Spin />}>
       <Drawer title={currentOrder.id} open={open} onClose={onClose}>
-        <h4>Total Time Taken: {currentOrderTimeElapsed} seconds</h4>
+        {isCompleted && (
+          <h4>Total Time Taken: {currentOrderTimeElapsed} seconds</h4>
+        )}
         <Steps
           direction="vertical"
           current={currentOrder.current}
@@ -35,7 +38,8 @@ CustomDrawer.propTypes = {
     title: PropTypes.string,
     description: PropTypes.string
   }),
-  currentOrderTimeElapsed: PropTypes.number
+  currentOrderTimeElapsed: PropTypes.number,
+  isCompleted: PropTypes.bool
 };
 
 export default CustomDrawer;
