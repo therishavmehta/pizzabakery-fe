@@ -26,12 +26,10 @@ const CustomDrawer = ({
   );
 };
 
-let data = PropTypes.objectOf({
-  title: PropTypes.string,
+let currentOrder = PropTypes.shape({
+  id: PropTypes.string,
   description: PropTypes.string
 });
-
-let currentOrder = PropTypes.string;
 
 CustomDrawer.propTypes = {
   open: PropTypes.bool,
@@ -39,7 +37,7 @@ CustomDrawer.propTypes = {
   form: PropTypes.object,
   onSubmit: PropTypes.func,
   currentOrder: PropTypes.objectOf(currentOrder),
-  items: PropTypes.arrayOf(data),
+  items: PropTypes.arrayOf(currentOrder),
   currentOrderTimeElapsed: PropTypes.number,
   isCompleted: PropTypes.bool
 };
