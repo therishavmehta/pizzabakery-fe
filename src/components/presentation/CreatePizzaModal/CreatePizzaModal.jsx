@@ -52,17 +52,19 @@ const CreatePizzaModal = ({
   );
 };
 
+let pizzaDetails = PropTypes.objectOf({
+  pizza_name: PropTypes.string,
+  toppings: PropTypes.arrayOf(PropTypes.string),
+  description: PropTypes.string,
+  image_url: PropTypes.string
+});
+
 CreatePizzaModal.propTypes = {
   isOpen: PropTypes.bool,
   isLoading: PropTypes.bool,
   handleCancel: PropTypes.func,
   handleOk: PropTypes.func,
-  pizzaDetails: PropTypes.objectOf({
-    pizza_name: PropTypes.string,
-    toppings: PropTypes.arrayOf(PropTypes.string),
-    description: PropTypes.string,
-    image_url: PropTypes.string
-  }).isRequired
+  pizzaDetails: PropTypes.objectOf(pizzaDetails).isRequired
 };
 
 export default memo(CreatePizzaModal);

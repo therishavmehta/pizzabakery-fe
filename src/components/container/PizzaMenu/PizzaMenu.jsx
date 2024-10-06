@@ -184,10 +184,10 @@ const PizzaMenu = (props) => {
 PizzaMenu.propTypes = {
   data: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      title: PropTypes.string.isRequired,
-      description: PropTypes.string.isRequired,
-      imageUrl: PropTypes.string.isRequired
+      id: PropTypes.number,
+      title: PropTypes.string,
+      description: PropTypes.string,
+      imageUrl: PropTypes.string
     })
   ).isRequired,
   onCreatePizza: PropTypes.func,
