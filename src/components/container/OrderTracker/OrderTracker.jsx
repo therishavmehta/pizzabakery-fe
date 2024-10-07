@@ -38,6 +38,13 @@ const OrderTracker = ({
     []
   );
 
+  useEffect(() => {
+    if (Object.keys(currentOrder)?.length > 0) {
+      const data = [...ongoingOrders, ...orders].find((order) => order.id === currentOrder.id);
+      if (data) setCurrentOrder({ ...data });
+    }
+  }, [ongoingOrders]);
+
   const sanatisedCurrentData = useMemo(() => {
     return orders.map(sanatiseData);
   }, [orders]);
@@ -76,9 +83,18 @@ const OrderTracker = ({
     });
 
     socket.on('orderStatus', (data) => {
+      const newData = {
+        timeline: data.timeline,
+        current: status[data.status],
+        title: data.id,
+        id: data.id,
+        abstractCurrent: abstractStatus[data.status],
+        [data.id]: data.status,
+        ...(data.status === 'ERROR' && { status: 'error' })
+      };
       if (data.status === 'COMPLETED') {
         startTransition(() => {
-          setOrders((orders) => [data, ...orders]);
+          setOrders((orders) => [{ ...data, ...newData }, ...orders]);
           setOnGoingOrders((prevOngoingOrder) => {
             const currentOnGoingOrders = [...prevOngoingOrder].filter(
               (order) => order.id !== data.id
@@ -92,25 +108,9 @@ const OrderTracker = ({
             const newOrders = [...prevOrders];
             const currentIdx = newOrders.map(({ id }) => id).indexOf(data.id);
             if (~currentIdx) {
-              newOrders[currentIdx] = {
-                timeline: data.timeline,
-                current: status[data.status],
-                title: data.id,
-                id: data.id,
-                abstractCurrent: abstractStatus[data.status],
-                [data.id]: data.status,
-                ...(data.status === 'ERROR' && { status: 'error' })
-              };
+              newOrders[currentIdx] = newData;
             } else {
-              newOrders.push({
-                timeline: data.timeline,
-                current: status[data.status],
-                title: data.id,
-                id: data.id,
-                abstractCurrent: abstractStatus[data.status],
-                [data.id]: data.status,
-                ...(data.status === 'ERROR' && { status: 'error' })
-              });
+              newOrders.push(newData);
             }
             return newOrders;
           })
