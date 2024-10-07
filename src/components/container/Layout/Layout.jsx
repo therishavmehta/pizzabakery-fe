@@ -1,11 +1,11 @@
-import { useCallback, useMemo } from 'react';
-import { Layout as AntLayout, Menu } from 'antd';
+import { lazy, useCallback, useMemo, Suspense } from 'react';
+import { Layout as AntLayout, Menu, Spin } from 'antd';
 import { useNavigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CalendarOutlined, PieChartOutlined } from '@ant-design/icons';
 import styles from './styles.module.css';
-import PizzaMenu from '../PizzaMenu/PizzaMenu';
-import { useEffect, useState } from 'react';
-import OrderTracker from '../OrderTracker/OrderTracker';
+
+const PizzaMenu = lazy(() => import('../PizzaMenu/PizzaMenu'));
+const OrderTracker = lazy(() => import('../OrderTracker/OrderTracker'));
 
 const { Header, Content } = AntLayout;
 
@@ -30,30 +30,6 @@ const items = [
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [ongoingOrders, setOnGoingOrders] = useState([]);
-  const [allPizza, setAllPizza] = useState([]);
-  const [isAllPizzaLoading, setIsAllPizzaLoading] = useState(false);
-  const [orders, setOrders] = useState([]);
-  const [currentRoute, setCurrentRoute] = useState('1');
-
-  useEffect(() => {
-    if (location.pathname === '/') {
-      (async function () {
-        setIsAllPizzaLoading(true);
-        const res = await fetch('http://localhost:8080/all');
-        const data = await res.json();
-        setAllPizza(data);
-        setIsAllPizzaLoading(false);
-      })();
-    } else {
-      (async function () {
-        setIsAllPizzaLoading(true);
-        const res = await fetch('http://localhost:8080/orders');
-        const data = await res.json();
-        setOrders(data.map((val) => ({ ...val, status: 'COMPLETED' })));
-      })();
-    }
-  }, [currentRoute]);
 
   const defaultAttribute = useMemo(() => {
     return [location.pathname === '/orders' ? '2' : '1'];
@@ -61,7 +37,6 @@ const Layout = () => {
 
   const onMenuChange = useCallback((e) => {
     const nav = routes[e.key];
-    setCurrentRoute(nav);
     navigate(nav);
   }, []);
 
@@ -96,18 +71,17 @@ const Layout = () => {
               exact
               path="/"
               element={
-                <PizzaMenu data={allPizza} isLoading={isAllPizzaLoading} setOnGoingOrders={setOnGoingOrders} />
+                <Suspense fallback={<Spin />}>
+                  <PizzaMenu />
+                </Suspense>
               }
             />
             <Route
               path="/orders"
               element={
-                <OrderTracker
-                  orders={orders}
-                  setOrders={setOrders}
-                  ongoingOrders={ongoingOrders}
-                  setOnGoingOrders={setOnGoingOrders}
-                />
+                <Suspense fallback={<Spin />}>
+                  <OrderTracker />
+                </Suspense>
               }
             />
           </Routes>

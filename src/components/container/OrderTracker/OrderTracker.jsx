@@ -10,23 +10,37 @@ import {
 import { List, Steps, Spin } from 'antd';
 import PropTypes from 'prop-types';
 import { socket } from '../../../../socket';
-import { status, abstractStatus, abstractItem, items } from '../../../static';
+import { abstractItem, items, abstractStatus, status } from '../../../static';
 
 const StatusDrawer = lazy(() =>
   import('../../presentation/StatusDrawer/StatusDrawer')
 );
 
-const OrderTracker = ({
-  orders,
-  setOrders,
-  ongoingOrders,
-  setOnGoingOrders
-}) => {
+const OrderTracker = () => {
+  const [savedOrders, setSavedOrders] = useState([]);
   const [showDrawer, setShowDrawer] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentOrder, setCurrentOrder] = useState({});
   const [isPending, startTransition] = useTransition();
 
-  const sanatiseData = useCallback(
+  useEffect(() => {
+    (async function () {
+      setIsLoading(true);
+      const res = await fetch('http://localhost:8080/orders');
+      const data = await res.json();
+      setSavedOrders(data.map(sanatiseOrderData));
+      setIsLoading(false);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (Object.keys(currentOrder)?.length > 0) {
+      const data = savedOrders.find((order) => order.id === currentOrder.id);
+      if (data) setCurrentOrder({ ...data });
+    }
+  }, [savedOrders]);
+
+  const sanatiseOrderData = useCallback(
     (data) => ({
       current: status[data.status],
       title: data.id,
@@ -37,17 +51,6 @@ const OrderTracker = ({
     }),
     []
   );
-
-  useEffect(() => {
-    if (Object.keys(currentOrder)?.length > 0) {
-      const data = [...ongoingOrders, ...orders].find((order) => order.id === currentOrder.id);
-      if (data) setCurrentOrder({ ...data });
-    }
-  }, [ongoingOrders]);
-
-  const sanatisedCurrentData = useMemo(() => {
-    return orders.map(sanatiseData);
-  }, [orders]);
 
   const currentOrderTimeElapsed = useMemo(() => {
     if (
@@ -66,56 +69,35 @@ const OrderTracker = ({
 
   useEffect(() => {
     socket.on('orderCreated', (data) => {
+      const sanatiseData = sanatiseOrderData(data);
       startTransition(() =>
-        setOnGoingOrders((prevOrders) => [
-          ...prevOrders,
-          {
-            ...data,
-            current: status[data.status],
-            title: data.id,
-            abstractCurrent: abstractStatus[data.status],
-            id: data.id,
-            [data.id]: data.status,
-            timeline: data.timeline
+        setSavedOrders((prevOrders) => {
+          const newOrders = [...prevOrders];
+          const currentIdx = newOrders.map(({ id }) => id).indexOf(data.id);
+          if (~currentIdx) {
+            newOrders[currentIdx] = sanatiseData;
+          } else {
+            newOrders.unshift(sanatiseData);
           }
-        ])
+          return newOrders;
+        })
       );
     });
 
     socket.on('orderStatus', (data) => {
-      const newData = {
-        timeline: data.timeline,
-        current: status[data.status],
-        title: data.id,
-        id: data.id,
-        abstractCurrent: abstractStatus[data.status],
-        [data.id]: data.status,
-        ...(data.status === 'ERROR' && { status: 'error' })
-      };
-      if (data.status === 'COMPLETED') {
-        startTransition(() => {
-          setOrders((orders) => [{ ...data, ...newData }, ...orders]);
-          setOnGoingOrders((prevOngoingOrder) => {
-            const currentOnGoingOrders = [...prevOngoingOrder].filter(
-              (order) => order.id !== data.id
-            );
-            return [...currentOnGoingOrders];
-          });
-        });
-      } else {
-        startTransition(() =>
-          setOnGoingOrders((prevOrders) => {
-            const newOrders = [...prevOrders];
-            const currentIdx = newOrders.map(({ id }) => id).indexOf(data.id);
-            if (~currentIdx) {
-              newOrders[currentIdx] = newData;
-            } else {
-              newOrders.push(newData);
-            }
-            return newOrders;
-          })
-        );
-      }
+      const sanatiseData = sanatiseOrderData(data);
+      startTransition(() =>
+        setSavedOrders((prevOrders) => {
+          const newOrders = [...prevOrders];
+          const currentIdx = newOrders.map(({ id }) => id).indexOf(data.id);
+          if (~currentIdx) {
+            newOrders[currentIdx] = sanatiseData;
+          } else {
+            newOrders.unshift(sanatiseData);
+          }
+          return newOrders;
+        })
+      );
     });
 
     return () => {
@@ -130,60 +112,57 @@ const OrderTracker = ({
   };
 
   return (
-    <Suspense fallback={<Spin />}>
-      <div>
-        <h3>Pizza Order Tracker</h3>
-        <List
-          style={{
-            height: 600,
-            overflow: 'auto',
-            padding: '0 16px',
-            border: '1px solid rgba(140, 140, 140, 0.35)',
-            background: 'white'
-          }}
-          loading={isPending}
-          itemLayout="horizontal"
-          dataSource={[...ongoingOrders, ...sanatisedCurrentData]}
-          renderItem={(item) => (
-            <List.Item
-              actions={[
-                <a key="more-detail" onClick={() => showMoreDetails(item)}>
-                  Detail
-                </a>
-              ]}
-            >
-              <List.Item.Meta
-                style={{ textAlign: 'start' }}
-                title={item.title}
-                description={item.description}
-              />
-              <Steps
-                style={{ marginTop: 8 }}
-                type="inline"
-                current={item.abstractCurrent}
-                status={item.status}
-                items={abstractItem}
-              />
-            </List.Item>
-          )}
-        />
-        <StatusDrawer
-          open={showDrawer}
-          items={items}
-          onClose={() => setShowDrawer(false)}
-          currentOrder={currentOrder}
-          currentOrderTimeElapsed={currentOrderTimeElapsed}
-          isCompleted={currentOrder?.timeline?.COMPLETED?.length > 0}
-        />
-      </div>
-    </Suspense>
+    <div>
+      <h3>Pizza Order Tracker</h3>
+      <List
+        style={{
+          height: 600,
+          overflow: 'auto',
+          padding: '0 16px',
+          border: '1px solid rgba(140, 140, 140, 0.35)',
+          background: 'white'
+        }}
+        itemLayout="horizontal"
+        loading={isLoading}
+        dataSource={savedOrders}
+        renderItem={(item) => (
+          <List.Item
+            actions={[
+              <a key="more-detail" onClick={() => showMoreDetails(item)}>
+                Detail
+              </a>
+            ]}
+          >
+            <List.Item.Meta
+              style={{ textAlign: 'start' }}
+              title={item.title}
+              description={item.description}
+            />
+            <Steps
+              style={{ marginTop: 8 }}
+              type="inline"
+              current={item.abstractCurrent}
+              status={item.status}
+              items={abstractItem}
+            />
+          </List.Item>
+        )}
+      />
+      <StatusDrawer
+        open={showDrawer}
+        items={items}
+        onClose={() => setShowDrawer(false)}
+        currentOrder={currentOrder}
+        currentOrderTimeElapsed={currentOrderTimeElapsed}
+        isCompleted={currentOrder?.timeline?.COMPLETED?.length > 0}
+      />
+    </div>
   );
 };
 
 OrderTracker.propTypes = {
-  orders: PropTypes.array,
-  setOrders: PropTypes.func,
-  ongoingOrders: PropTypes.array,
-  setOnGoingOrders: PropTypes.func
+  savedOrders: PropTypes.array,
+  setSavedOrders: PropTypes.func,
+  sanatiseOrderData: PropTypes.func
 };
 export default OrderTracker;

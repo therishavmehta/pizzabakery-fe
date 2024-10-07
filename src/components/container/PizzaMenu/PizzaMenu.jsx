@@ -1,8 +1,7 @@
-import { useState, memo, useCallback, lazy, Suspense } from 'react';
+import { useState, memo, useCallback, lazy, Suspense, useEffect } from 'react';
 import { Card, Form, Flex, Skeleton, message, Spin } from 'antd';
 import PropTypes from 'prop-types';
 import styles from './styles.module.css';
-import { abstractStatus, status } from '../../../static';
 const CreatePizzaDrawer = lazy(() =>
   import('../../presentation/CreatePizzaDrawer/CreatePizzaDrawer')
 );
@@ -11,14 +10,26 @@ const CreatePizzaModal = lazy(() =>
 );
 const { Meta } = Card;
 
-const PizzaMenu = (props) => {
-  const { data, isLoading, setOnGoingOrders } = props;
+const PizzaMenu = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAllPizzaLoading, setIsAllPizzaLoading] = useState(false);
+  const [allPizza, setAllPizza] = useState([]);
   const [isCreatingPizzaOrder, setIsCreatingPizzaOrder] = useState(false);
   const [isCreatingCustomPizza, setIsCreatingCustomPizza] = useState(false);
   const [currentPizza, setCurrentPizza] = useState({});
   const [createPizzaForm] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
+
+  useEffect(() => {
+    (async function () {
+      setIsAllPizzaLoading(true);
+      const res = await fetch('http://localhost:8080/all');
+      const data = await res.json();
+      setAllPizza(data);
+      setIsAllPizzaLoading(false);
+    })();
+  }, []);
+
   const onCancelPizza = () => {
     setIsModalOpen(false);
     setCurrentPizza({});
@@ -49,17 +60,6 @@ const PizzaMenu = (props) => {
         body: JSON.stringify({ toppings })
       });
       const response = await raw.json();
-      setOnGoingOrders((prev) => [
-        {
-          current: status[response.data.status],
-          title: response.data.id,
-          abstractCurrent: abstractStatus[response.data.status],
-          id: response.data.id,
-          [response.data.id]: response.data.status,
-          timeline: response.data.timeline
-        },
-        ...prev
-      ]);
       messageApi.open({
         type: 'success',
         content: `Order ${response.data.id} is in progress.`
@@ -104,80 +104,78 @@ const PizzaMenu = (props) => {
     }
   }, []);
   return (
-    <Suspense fallback={<Spin />}>
-      <Flex wrap gap="small" justify="center" onClick={onPizzaClick}>
-        {isLoading ? (
-          [1, 2, 3, 4, 5].map((val, idx) => (
-            <Card
-              key={idx}
-              className={styles['card']}
-              cover={
-                <Skeleton.Image active className={styles['loading-image']} />
+    <Flex wrap gap="small" justify="center" onClick={onPizzaClick}>
+      {isAllPizzaLoading ? (
+        [1, 2, 3, 4, 5].map((val, idx) => (
+          <Card
+            key={idx}
+            className={styles['card']}
+            cover={
+              <Skeleton.Image active className={styles['loading-image']} />
+            }
+          >
+            <Skeleton active paragraph={{ rows: 1 }} />
+          </Card>
+        ))
+      ) : (
+        <>
+          <Card
+            key="diy-pizza"
+            data-card-id="diy-pizza"
+            hoverable
+            className={styles['card']}
+            cover={
+              <img
+                alt="example"
+                src="https://pizzamiamiami.com/wp-content/uploads/2020/04/checkout-create-your-pizza.png"
+              />
+            }
+          >
+            <Meta
+              title={'Create your own pizza'}
+              description={
+                'Curate your pizza with custom base, toppings and flavour.'
               }
-            >
-              <Skeleton active paragraph={{ rows: 1 }} />
-            </Card>
-          ))
-        ) : (
-          <>
+            />
+          </Card>
+          {allPizza.map((currentData) => (
             <Card
-              key="diy-pizza"
-              data-card-id="diy-pizza"
+              key={currentData.id}
+              data-card-details={JSON.stringify(currentData)}
               hoverable
               className={styles['card']}
+              data-card-id={currentData.id}
               cover={
                 <img
+                  className={styles['pizza-preview']}
                   alt="example"
-                  src="https://pizzamiamiami.com/wp-content/uploads/2020/04/checkout-create-your-pizza.png"
+                  src={currentData.image_url}
                 />
               }
             >
               <Meta
-                title={'Create your own pizza'}
-                description={
-                  'Curate your pizza with custom base, toppings and flavour.'
-                }
+                title={currentData.pizza_name}
+                description={currentData.description}
               />
             </Card>
-            {data.map((currentData) => (
-              <Card
-                key={currentData.id}
-                data-card-details={JSON.stringify(currentData)}
-                hoverable
-                className={styles['card']}
-                data-card-id={currentData.id}
-                cover={
-                  <img
-                    className={styles['pizza-preview']}
-                    alt="example"
-                    src={currentData.image_url}
-                  />
-                }
-              >
-                <Meta
-                  title={currentData.pizza_name}
-                  description={currentData.description}
-                />
-              </Card>
-            ))}
-            <CreatePizzaModal
-              isOpen={isModalOpen}
-              isLoading={isCreatingPizzaOrder}
-              handleCancel={onCancelPizza}
-              pizzaDetails={currentPizza}
-              handleOk={onCreatePizzaOrder}
-            />
-            <CreatePizzaDrawer
-              open={isCreatingCustomPizza}
-              onClose={onCreateCustomPizzaClose}
-              form={createPizzaForm}
-              onSubmit={onCustomPizzCreate}
-            />
-            {contextHolder}
-          </>
-        )}
-      </Flex>
-    </Suspense>
+          ))}
+          <CreatePizzaModal
+            isOpen={isModalOpen}
+            isLoading={isCreatingPizzaOrder}
+            handleCancel={onCancelPizza}
+            pizzaDetails={currentPizza}
+            handleOk={onCreatePizzaOrder}
+          />
+          <CreatePizzaDrawer
+            open={isCreatingCustomPizza}
+            onClose={onCreateCustomPizzaClose}
+            form={createPizzaForm}
+            onSubmit={onCustomPizzCreate}
+          />
+          {contextHolder}
+        </>
+      )}
+    </Flex>
   );
 };
 
@@ -191,8 +189,7 @@ PizzaMenu.propTypes = {
     })
   ).isRequired,
   onCreatePizza: PropTypes.func,
-  isLoading: PropTypes.bool,
-  setOnGoingOrders: PropTypes.func
+  isLoading: PropTypes.bool
 };
 
 export default memo(PizzaMenu);
