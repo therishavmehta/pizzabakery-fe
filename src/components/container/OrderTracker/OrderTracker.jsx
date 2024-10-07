@@ -67,38 +67,26 @@ const OrderTracker = () => {
     return 0;
   }, [currentOrder]);
 
-  useEffect(() => {
-    socket.on('orderCreated', (data) => {
-      const sanatiseData = sanatiseOrderData(data);
-      startTransition(() =>
-        setSavedOrders((prevOrders) => {
-          const newOrders = [...prevOrders];
-          const currentIdx = newOrders.map(({ id }) => id).indexOf(data.id);
-          if (~currentIdx) {
-            newOrders[currentIdx] = sanatiseData;
-          } else {
-            newOrders.unshift(sanatiseData);
-          }
-          return newOrders;
-        })
-      );
-    });
+  const setSavedDataOnStatusChange = useCallback((data) => {
+    const sanatiseData = sanatiseOrderData(data);
+    startTransition(() =>
+      setSavedOrders((prevOrders) => {
+        const newOrders = [...prevOrders];
+        const currentIdx = newOrders.map(({ id }) => id).indexOf(data.id);
+        if (~currentIdx) {
+          newOrders[currentIdx] = sanatiseData;
+        } else {
+          newOrders.unshift(sanatiseData);
+        }
+        return newOrders;
+      })
+    );
+  }, []);
 
-    socket.on('orderStatus', (data) => {
-      const sanatiseData = sanatiseOrderData(data);
-      startTransition(() =>
-        setSavedOrders((prevOrders) => {
-          const newOrders = [...prevOrders];
-          const currentIdx = newOrders.map(({ id }) => id).indexOf(data.id);
-          if (~currentIdx) {
-            newOrders[currentIdx] = sanatiseData;
-          } else {
-            newOrders.unshift(sanatiseData);
-          }
-          return newOrders;
-        })
-      );
-    });
+  useEffect(() => {
+    socket.on('orderCreated', setSavedDataOnStatusChange);
+
+    socket.on('orderStatus', setSavedDataOnStatusChange);
 
     return () => {
       socket.off('orderCreated');
